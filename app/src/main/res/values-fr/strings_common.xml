@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="app_name">Carnet</string>
+    <string name="drawer_open">Ouvrir le menu</string>
+    <string name="drawer_close">Fermer le menu</string>
+    <string name="menu_list">Liste</string>
+    <string name="menu_map">Carte</string>
+    <string name="menu_add">Ajouter</string>
+</resources>
