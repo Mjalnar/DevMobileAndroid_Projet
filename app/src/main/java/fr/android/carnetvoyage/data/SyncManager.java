@@ -24,7 +24,9 @@ public class SyncManager {
 
     public SyncManager(Context context) {
         this.localRepo = new LocalRepository(context);
-        // Remplacez par l'URL réelle de votre serveur PHP
+        // TODO: Remplacez par l'URL réelle de votre serveur PHP.
+        // Si vous testez avec un émulateur et un serveur local (WAMP/MAMP/XAMPP), 
+        // utilisez "http://10.0.2.2/votre_dossier/api/"
         this.remoteRepo = new RemoteRepository("http://votre-serveur.com/api/");
     }
 

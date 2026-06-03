@@ -43,9 +43,10 @@ import java.util.concurrent.Executors;
 import fr.android.carnetvoyage.R;
 import fr.android.carnetvoyage.data.LocalRepository;
 import fr.android.carnetvoyage.data.Repository;
+import fr.android.carnetvoyage.location.LocationHelper;
 import fr.android.carnetvoyage.model.Entry;
 
-public class AddFragment extends Fragment {
+public class AddFragment extends Fragment implements LocationHelper.Callback {
 
     private EditText editTitle, editNote;
     private ImageView imagePreview;
@@ -57,7 +58,7 @@ public class AddFragment extends Fragment {
     private String currentAddress = "";
 
     private Repository repository;
-    private FusedLocationProviderClient fusedLocationClient;
+    private LocationHelper locationHelper;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     // Launcher pour la caméra
@@ -81,18 +82,6 @@ public class AddFragment extends Fragment {
             }
     );
 
-    // Launcher pour la permission Localisation
-    private final ActivityResultLauncher<String[]> locationPermissionLauncher = registerForActivityResult(
-            new ActivityResultContracts.RequestMultiplePermissions(),
-            result -> {
-                Boolean fineLocation = result.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false);
-                Boolean coarseLocation = result.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false);
-                if (fineLocation != null && fineLocation || coarseLocation != null && coarseLocation) {
-                    getLastLocation();
-                }
-            }
-    );
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -106,12 +95,12 @@ public class AddFragment extends Fragment {
         btnSave = view.findViewById(R.id.btn_save);
 
         repository = new LocalRepository(requireContext());
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
+        locationHelper = new LocationHelper(this, this);
 
         btnTakePhoto.setOnClickListener(v -> checkCameraPermission());
         btnSave.setOnClickListener(v -> saveEntry());
 
-        checkLocationPermission();
+        locationHelper.requestLocation();
 
         return view;
     }
@@ -124,41 +113,33 @@ public class AddFragment extends Fragment {
         }
     }
 
-    private void checkLocationPermission() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            getLastLocation();
-        } else {
-            locationPermissionLauncher.launch(new String[]{
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-            });
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        locationHelper.onPermissionResult(requestCode, grantResults);
+    }
+
+    @Override
+    public void onLocationReady(double latitude, double longitude, String address) {
+        currentLat = latitude;
+        currentLng = longitude;
+        currentAddress = address;
+        if (isAdded()) {
+            textLocation.setText(String.format(Locale.getDefault(), getString(R.string.location_format), currentLat, currentLng));
         }
     }
 
-    private void getLastLocation() {
-        try {
-            fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
-                if (location != null) {
-                    currentLat = location.getLatitude();
-                    currentLng = location.getLongitude();
-                    textLocation.setText(String.format(Locale.getDefault(), getString(R.string.location_format), currentLat, currentLng));
-                    
-                    // Géocodage inverse (normalement c'est Lucas (A), mais j'en ai besoin pour l'objet Entry)
-                    executor.execute(() -> {
-                        Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
-                        try {
-                            List<Address> addresses = geocoder.getFromLocation(currentLat, currentLng, 1);
-                            if (addresses != null && !addresses.isEmpty()) {
-                                currentAddress = addresses.get(0).getAddressLine(0);
-                            }
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                }
-            });
-        } catch (SecurityException e) {
-            e.printStackTrace();
+    @Override
+    public void onLocationError(String message) {
+        if (isAdded()) {
+            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onPermissionDenied() {
+        if (isAdded()) {
+            Toast.makeText(requireContext(), R.string.loc_permission_denied, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -212,7 +193,10 @@ public class AddFragment extends Fragment {
             requireActivity().runOnUiThread(() -> {
                 if (id != -1) {
                     Toast.makeText(requireContext(), R.string.success_saving, Toast.LENGTH_SHORT).show();
-                    // On pourrait naviguer vers la liste ici
+                    // Retourner à la liste après sauvegarde
+                    getParentFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, new ListFragment())
+                            .commit();
                 } else {
                     Toast.makeText(requireContext(), R.string.error_saving, Toast.LENGTH_SHORT).show();
                 }

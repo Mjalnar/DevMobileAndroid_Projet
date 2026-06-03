@@ -8,12 +8,6 @@ import fr.android.carnetvoyage.model.Entry;
 /**
  * TEMPORAIRE (Personne A). Faux Repository en mémoire pour développer et tester
  * l'UI (Liste, Carte) AVANT que le LocalRepository SQLite de B existe.
- *
- * Grâce au pattern Repository, les fragments ne dépendent que de l'interface
- * {@link Repository} : le jour où LocalRepository est prêt, on remplace
- * "new StubRepository()" par "new LocalRepository(context)" et l'UI ne bouge pas.
- *
- * À SUPPRIMER une fois LocalRepository livré.
  */
 public class StubRepository implements Repository {
 
@@ -24,13 +18,13 @@ public class StubRepository implements Repository {
         long now = System.currentTimeMillis();
         entries.add(new Entry(nextId++, "Tour Eiffel",
                 "Vue magnifique au coucher du soleil", null,
-                48.8584, 2.2945, "Champ de Mars, 75007 Paris", now - 86_400_000L));
+                48.8584, 2.2945, "Champ de Mars, 75007 Paris", now - 86_400_000L, -1L));
         entries.add(new Entry(nextId++, "Calanque de Sormiou",
                 "Randonnée puis baignade", null,
-                43.2096, 5.4180, "Marseille", now - 3_600_000L));
+                43.2096, 5.4180, "Marseille", now - 3_600_000L, -1L));
         entries.add(new Entry(nextId++, "Mont Saint-Michel",
                 "Marée impressionnante", null,
-                48.6361, -1.5115, "Le Mont-Saint-Michel", now));
+                48.6361, -1.5115, "Le Mont-Saint-Michel", now, -1L));
     }
 
     @Override

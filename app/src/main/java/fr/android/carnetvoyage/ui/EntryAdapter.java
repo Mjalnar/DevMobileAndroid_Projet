@@ -9,6 +9,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.net.Uri;
+import java.io.File;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -62,9 +64,16 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
 
         holder.date.setText(dateFormat.format(new Date(entry.getTimestamp())));
 
-        // TODO : afficher la vraie vignette depuis entry.getPhotoPath() quand B
-        //        aura la capture photo (décodage à faire hors thread principal).
-        holder.photo.setImageResource(android.R.drawable.ic_menu_gallery);
+        if (entry.getPhotoPath() != null) {
+            File photoFile = new File(entry.getPhotoPath());
+            if (photoFile.exists()) {
+                holder.photo.setImageURI(Uri.fromFile(photoFile));
+            } else {
+                holder.photo.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+        } else {
+            holder.photo.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
     }
 
     @Override
