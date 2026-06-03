@@ -18,8 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
-import fr.android.carnetvoyage.data.Repository;
-import fr.android.carnetvoyage.data.StubRepository;
+import fr.android.carnetvoyage.data.LocalRepository;
 import fr.android.carnetvoyage.model.Entry;
 
 public class ListFragment extends Fragment {
@@ -27,12 +26,8 @@ public class ListFragment extends Fragment {
     private EntryAdapter adapter;
     private TextView emptyView;
 
-    // Lecture des données sur un thread de fond (la vraie source = SQLite).
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    // On ne connaît QUE l'interface. TODO : remplacer StubRepository par le
-    // LocalRepository (SQLite) de B dès qu'il est livré -> rien d'autre à changer ici.
-    private final Repository repository = new StubRepository();
+    private LocalRepository repository;
 
     @Nullable
     @Override
@@ -46,10 +41,10 @@ public class ListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        repository = new LocalRepository(requireContext());
         emptyView = view.findViewById(R.id.tv_empty);
 
         RecyclerView recyclerView = view.findViewById(R.id.rv_entries);
-        // 1 colonne en portrait, 2 en paysage : la valeur vient de values(-land)/integers.xml.
         int spanCount = getResources().getInteger(R.integer.list_span_count);
         recyclerView.setLayoutManager(new GridLayoutManager(getContext(), spanCount));
         adapter = new EntryAdapter();
@@ -59,7 +54,6 @@ public class ListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Rechargé à chaque retour sur l'écran -> les nouvelles entrées apparaissent.
         loadEntries();
     }
 
@@ -69,7 +63,7 @@ public class ListFragment extends Fragment {
 
             Activity activity = getActivity();
             if (activity == null) {
-                return; // fragment détaché entre-temps
+                return;
             }
             activity.runOnUiThread(() -> {
                 if (!isAdded()) {

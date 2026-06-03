@@ -22,8 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
-import fr.android.carnetvoyage.data.Repository;
-import fr.android.carnetvoyage.data.StubRepository;
+import fr.android.carnetvoyage.data.LocalRepository;
 import fr.android.carnetvoyage.location.LocationHelper;
 import fr.android.carnetvoyage.model.Entry;
 
@@ -34,10 +33,7 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
     private Marker myPositionMarker;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-
-    // Même contrat que la Liste : on ne connaît que l'interface.
-    // TODO : remplacer StubRepository par le LocalRepository (SQLite) de B.
-    private final Repository repository = new StubRepository();
+    private LocalRepository repository;
 
     @Nullable
     @Override
@@ -54,11 +50,13 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        repository = new LocalRepository(requireContext());
+
         map = view.findViewById(R.id.map);
-        map.setTileSource(TileSourceFactory.MAPNIK);   // tuiles OpenStreetMap standard
-        map.setMultiTouchControls(true);               // pincer pour zoomer
+        map.setTileSource(TileSourceFactory.MAPNIK);
+        map.setMultiTouchControls(true);
         map.getController().setZoom(5.5);
-        map.getController().setCenter(new GeoPoint(46.6, 2.5)); // centre approx. de la France
+        map.getController().setCenter(new GeoPoint(46.6, 2.5));
 
         locationHelper = new LocationHelper(this, this);
         view.findViewById(R.id.btn_my_location)
@@ -67,7 +65,6 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
         loadEntryMarkers();
     }
 
-    /** Lit les entrées (thread de fond) puis pose un marqueur par lieu sur l'UI. */
     private void loadEntryMarkers() {
         executor.execute(() -> {
             List<Entry> entries = repository.getAll();
@@ -88,7 +85,7 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
                     marker.setSnippet(entry.getAddress());
                     map.getOverlays().add(marker);
                 }
-                map.invalidate(); // redessine la carte avec les nouveaux marqueurs
+                map.invalidate();
             });
         });
     }
@@ -100,8 +97,6 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         locationHelper.onPermissionResult(requestCode, grantResults);
     }
-
-    // --- Callbacks de LocationHelper : recentrage sur ma position ---
 
     @Override
     public void onLocationReady(double latitude, double longitude, String address) {
@@ -131,7 +126,6 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
         Toast.makeText(getContext(), R.string.loc_permission_denied, Toast.LENGTH_SHORT).show();
     }
 
-    // osmdroid a son propre cycle de vie à relayer, sinon fuites / carte figée.
     @Override
     public void onResume() {
         super.onResume();

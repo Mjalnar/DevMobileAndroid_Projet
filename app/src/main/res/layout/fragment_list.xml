@@ -10,7 +10,6 @@
         android:clipToPadding="false"
         android:padding="8dp" />
 
-    <!-- Affiché uniquement quand la liste est vide -->
     <TextView
         android:id="@+id/tv_empty"
         android:layout_width="wrap_content"
@@ -21,4 +20,5 @@
         android:text="@string/list_empty"
         android:textSize="16sp"
         android:visibility="gone" />
+
 </FrameLayout>

@@ -13,3 +13,18 @@
 .externalNativeBuild
 .cxx
 local.properties
+# Android Studio
+*.iml
+.idea/modules.xml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+.idea/caches
+.idea/libraries
+build/
+capture/
+# Gradle
+.gradle/
+# Log files
+*.log
