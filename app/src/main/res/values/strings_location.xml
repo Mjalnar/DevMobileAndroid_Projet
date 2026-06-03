@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="loc_my_position">My location</string>
+    <string name="loc_searching">Getting your location…</string>
+    <string name="loc_unavailable">Location unavailable, please try again</string>
+    <string name="loc_permission_denied">Location permission denied</string>
+    <string name="loc_address_unknown">Address not found</string>
+    <string name="loc_error">Location error</string>
+</resources>
