@@ -1,23 +1,34 @@
 package fr.android.carnetvoyage;
 
 import android.os.Bundle;
+import android.widget.Toast;
+
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
+
 import com.google.android.material.navigation.NavigationView;
-import fr.android.carnetvoyage.R;
+
+import fr.android.carnetvoyage.data.SyncManager;
+import fr.android.carnetvoyage.ui.AddFragment;
+import fr.android.carnetvoyage.ui.ListFragment;
+import fr.android.carnetvoyage.ui.MapFragment;
 
 public class MainActivity extends AppCompatActivity {
 
     private DrawerLayout drawerLayout;
+    private SyncManager syncManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // Initialisation du gestionnaire de synchronisation (Personne B)
+        syncManager = new SyncManager(this);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -41,16 +52,35 @@ public class MainActivity extends AppCompatActivity {
                 loadFragment(new MapFragment(), getString(R.string.menu_map));
             } else if (id == R.id.nav_add) {
                 loadFragment(new AddFragment(), getString(R.string.menu_add));
+            } else if (id == R.id.nav_sync) {
+                handleSync();
             }
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         });
 
-        // Fragment par défaut, UNIQUEMENT à la première création
+        // Fragment par défaut
         if (savedInstanceState == null) {
             loadFragment(new ListFragment(), getString(R.string.menu_list));
             navigationView.setCheckedItem(R.id.nav_list);
         }
+    }
+
+    /**
+     * Gère la synchronisation manuelle via le menu (Personne B)
+     */
+    private void handleSync() {
+        if (!SyncManager.isNetworkAvailable(this)) {
+            Toast.makeText(this, R.string.no_network, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Toast.makeText(this, R.string.sync_started, Toast.LENGTH_SHORT).show();
+        syncManager.syncLocalToRemote(count -> runOnUiThread(() ->
+                Toast.makeText(MainActivity.this,
+                        getString(R.string.sync_finished, count),
+                        Toast.LENGTH_LONG).show()
+        ));
     }
 
     private void loadFragment(Fragment fragment, String title) {

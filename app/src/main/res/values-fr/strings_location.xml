@@ -1,2 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources></resources>
+<resources>
+    <string name="loc_my_position">Ma position</string>
+    <string name="loc_searching">Récupération de votre position…</string>
+    <string name="loc_unavailable">Position indisponible, réessayez</string>
+    <string name="loc_permission_denied">Permission de localisation refusée</string>
+    <string name="loc_address_unknown">Adresse introuvable</string>
+    <string name="loc_error">Erreur de localisation</string>
+</resources>

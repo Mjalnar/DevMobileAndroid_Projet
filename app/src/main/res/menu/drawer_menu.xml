@@ -12,4 +12,8 @@
         android:id="@+id/nav_add"
         android:icon="@android:drawable/ic_menu_add"
         android:title="@string/menu_add" />
+    <item
+        android:id="@+id/nav_sync"
+        android:icon="@android:drawable/ic_popup_sync"
+        android:title="@string/menu_sync" />
 </menu>
