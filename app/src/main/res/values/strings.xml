@@ -1,3 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textes par défaut (anglais). La version française est dans values-fr/strings.xml.
+     Android choisit automatiquement le bon fichier selon la langue du téléphone. -->
 <resources>
-    <!-- app_name est défini dans strings_common.xml (fr + en). -->
+    <string name="app_name">Carnet</string>
+
+    <!-- Menu / tiroir -->
+    <string name="drawer_open">Open menu</string>
+    <string name="drawer_close">Close menu</string>
+    <string name="menu_list">List</string>
+    <string name="menu_map">Map</string>
+    <string name="menu_add">Add Entry</string>
+    <string name="menu_sync">Synchronize</string>
+
+    <!-- Écran d'ajout -->
+    <string name="hint_title">Title</string>
+    <string name="hint_note">Note</string>
+    <string name="btn_take_photo">Take Photo</string>
+    <string name="btn_save">Save Entry</string>
+    <string name="waiting_location">Waiting for location...</string>
+    <string name="error_saving">Error while saving entry</string>
+    <string name="success_saving">Entry saved successfully</string>
+    <string name="location_format">Lat: %.4f, Lng: %.4f</string>
+
+    <!-- Liste -->
+    <string name="list_empty">No places yet. Add your first one!</string>
+    <string name="list_photo_desc">Place photo</string>
+
+    <!-- Localisation -->
+    <string name="loc_my_position">My location</string>
+    <string name="loc_permission_denied">Location permission denied</string>
+    <string name="loc_address_unknown">Address not found</string>
+    <string name="loc_error">Location error</string>
+
+    <!-- Synchronisation -->
+    <string name="sync_started">Sync started...</string>
+    <string name="sync_finished">%d items synchronized</string>
+    <string name="no_network">No internet connection</string>
 </resources>

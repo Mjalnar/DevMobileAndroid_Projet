@@ -11,11 +11,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
-import org.osmdroid.config.Configuration;
-import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
-import org.osmdroid.util.GeoPoint;
-import org.osmdroid.views.MapView;
-import org.osmdroid.views.overlay.Marker;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -26,9 +28,9 @@ import fr.android.carnetvoyage.data.LocalRepository;
 import fr.android.carnetvoyage.location.LocationHelper;
 import fr.android.carnetvoyage.model.Entry;
 
-public class MapFragment extends Fragment implements LocationHelper.Callback {
+public class MapFragment extends Fragment implements OnMapReadyCallback, LocationHelper.Callback {
 
-    private MapView map;
+    private GoogleMap googleMap;
     private LocationHelper locationHelper;
     private Marker myPositionMarker;
 
@@ -40,9 +42,6 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        // osmdroid EXIGE un "user agent" identifiant l'app, sinon les serveurs
-        // de tuiles OpenStreetMap refusent les requêtes. À faire avant d'inflater.
-        Configuration.getInstance().setUserAgentValue(requireContext().getPackageName());
         return inflater.inflate(R.layout.fragment_map, container, false);
     }
 
@@ -52,16 +51,24 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
 
         repository = new LocalRepository(requireContext());
 
-        map = view.findViewById(R.id.map);
-        map.setTileSource(TileSourceFactory.MAPNIK);
-        map.setMultiTouchControls(true);
-        map.getController().setZoom(5.5);
-        map.getController().setCenter(new GeoPoint(46.6, 2.5));
+        // Récupère la carte Google déclarée dans le layout et demande son chargement.
+        SupportMapFragment mapFragment =
+                (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
 
         locationHelper = new LocationHelper(this, this);
         view.findViewById(R.id.btn_my_location)
                 .setOnClickListener(v -> locationHelper.requestLocation());
+    }
 
+    // Appelé par Google quand la carte est prête à être utilisée.
+    @Override
+    public void onMapReady(@NonNull GoogleMap map) {
+        this.googleMap = map;
+        // Vue d'ensemble de la France au démarrage.
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(46.6, 2.5), 5f));
         loadEntryMarkers();
     }
 
@@ -74,18 +81,15 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
                 return;
             }
             activity.runOnUiThread(() -> {
-                if (!isAdded()) {
+                if (!isAdded() || googleMap == null) {
                     return;
                 }
                 for (Entry entry : entries) {
-                    Marker marker = new Marker(map);
-                    marker.setPosition(new GeoPoint(entry.getLatitude(), entry.getLongitude()));
-                    marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-                    marker.setTitle(entry.getTitle());
-                    marker.setSnippet(entry.getAddress());
-                    map.getOverlays().add(marker);
+                    googleMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(entry.getLatitude(), entry.getLongitude()))
+                            .title(entry.getTitle())
+                            .snippet(entry.getAddress()));
                 }
-                map.invalidate();
             });
         });
     }
@@ -100,19 +104,18 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
 
     @Override
     public void onLocationReady(double latitude, double longitude, String address) {
-        GeoPoint here = new GeoPoint(latitude, longitude);
-
-        if (myPositionMarker == null) {
-            myPositionMarker = new Marker(map);
-            myPositionMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            myPositionMarker.setTitle(getString(R.string.loc_my_position));
-            map.getOverlays().add(myPositionMarker);
+        if (googleMap == null) {
+            return;
         }
-        myPositionMarker.setPosition(here);
-
-        map.getController().setZoom(16.0);
-        map.getController().animateTo(here);
-        map.invalidate();
+        LatLng here = new LatLng(latitude, longitude);
+        if (myPositionMarker == null) {
+            myPositionMarker = googleMap.addMarker(new MarkerOptions()
+                    .position(here)
+                    .title(getString(R.string.loc_my_position)));
+        } else {
+            myPositionMarker.setPosition(here);
+        }
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(here, 16f));
     }
 
     @Override
@@ -127,18 +130,10 @@ public class MapFragment extends Fragment implements LocationHelper.Callback {
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        if (map != null) {
-            map.onResume();
-        }
-    }
-
-    @Override
     public void onPause() {
         super.onPause();
-        if (map != null) {
-            map.onPause();
+        if (locationHelper != null) {
+            locationHelper.stopLocation();
         }
     }
 }

@@ -94,23 +94,4 @@ public class RemoteRepository implements Repository {
         }
         return entries;
     }
-
-    @Override
-    public Entry getById(long id) { return null; } // Non implémenté pour le remote dans ce projet
-
-    @Override
-    public boolean update(Entry entry) { return false; } // Non implémenté
-
-    @Override
-    public boolean delete(long remoteId) {
-        try {
-            URL url = new URL(baseUrl + "delete.php?id=" + remoteId);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            return conn.getResponseCode() == HttpURLConnection.HTTP_OK;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
 }

@@ -52,20 +52,7 @@ public class LocalRepository implements Repository {
         return entries;
     }
 
-    @Override
-    public Entry getById(long id) {
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor cursor = db.query(DatabaseHelper.TABLE_ENTRIES, null, DatabaseHelper.COLUMN_ID + "=?", new String[]{String.valueOf(id)}, null, null, null);
-
-        Entry entry = null;
-        if (cursor.moveToFirst()) {
-            entry = cursorToEntry(cursor);
-        }
-        cursor.close();
-        return entry;
-    }
-
-    @Override
+    // Utilisé par SyncManager pour réécrire le remoteId après synchronisation.
     public boolean update(Entry entry) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -79,13 +66,6 @@ public class LocalRepository implements Repository {
         values.put(DatabaseHelper.COLUMN_REMOTE_ID, entry.getRemoteId());
 
         int rows = db.update(DatabaseHelper.TABLE_ENTRIES, values, DatabaseHelper.COLUMN_ID + "=?", new String[]{String.valueOf(entry.getId())});
-        return rows > 0;
-    }
-
-    @Override
-    public boolean delete(long id) {
-        SQLiteDatabase db = dbHelper.getWritableDatabase();
-        int rows = db.delete(DatabaseHelper.TABLE_ENTRIES, DatabaseHelper.COLUMN_ID + "=?", new String[]{String.valueOf(id)});
         return rows > 0;
     }
 

@@ -17,6 +17,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MonCarnetVoyage">
+
+        <!-- Clé API Google Maps : REMPLACER par votre propre clé
+             (Google Cloud Console > Maps SDK for Android). Sans clé valide,
+             la carte reste grise. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="VOTRE_CLE_ICI" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">

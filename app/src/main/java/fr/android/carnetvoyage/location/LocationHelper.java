@@ -7,14 +7,17 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
-import android.location.LocationManager;
-import android.os.Build;
+import android.location.Location;
+import android.os.Looper;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.Priority;
 
@@ -26,6 +29,11 @@ import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
 
+/**
+ * Récupère la position en TEMPS RÉEL via le FusedLocationProviderClient de Google
+ * (vu en TP) : on demande des mises à jour régulières (requestLocationUpdates) et,
+ * à chaque nouvelle position, on fait un géocodage inverse pour obtenir l'adresse.
+ */
 public class LocationHelper {
 
     public static final int REQUEST_LOCATION_PERMISSION = 1001;
@@ -40,6 +48,8 @@ public class LocationHelper {
     private final Activity activity;
     private final Callback callback;
     private final FusedLocationProviderClient fusedClient;
+    private final LocationRequest locationRequest;
+    private final LocationCallback locationCallback;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     public LocationHelper(@NonNull Fragment fragment, @NonNull Callback callback) {
@@ -47,6 +57,20 @@ public class LocationHelper {
         this.activity = fragment.requireActivity();
         this.callback = callback;
         this.fusedClient = LocationServices.getFusedLocationProviderClient(activity);
+
+        // Une position toutes les 5 secondes, en haute précision (GPS).
+        this.locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build();
+
+        // Appelé automatiquement par Google à chaque nouvelle position.
+        this.locationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(@NonNull LocationResult result) {
+                Location location = result.getLastLocation();
+                if (location != null) {
+                    reverseGeocode(location.getLatitude(), location.getLongitude());
+                }
+            }
+        };
     }
 
     public static boolean hasPermission(Context context) {
@@ -54,20 +78,10 @@ public class LocationHelper {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    private boolean isLocationEnabled() {
-        LocationManager lm = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
-        return lm.isProviderEnabled(LocationManager.GPS_PROVIDER) || 
-               lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-    }
-
+    /** Demande la permission si besoin, puis lance les mises à jour de position. */
     public void requestLocation() {
-        if (!isLocationEnabled()) {
-            callback.onLocationError(activity.getString(R.string.loc_unavailable));
-            return;
-        }
-
         if (hasPermission(activity)) {
-            fetchLocation();
+            startUpdates();
         } else {
             fragment.requestPermissions(
                     new String[]{
@@ -78,9 +92,20 @@ public class LocationHelper {
         }
     }
 
+    @SuppressLint("MissingPermission")
+    private void startUpdates() {
+        fusedClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+                .addOnFailureListener(e -> callback.onLocationError(e.getMessage()));
+    }
+
+    /** À appeler dans onPause du fragment pour arrêter le GPS (économie de batterie). */
+    public void stopLocation() {
+        fusedClient.removeLocationUpdates(locationCallback);
+    }
+
     public void onPermissionResult(int requestCode, @NonNull int[] grantResults) {
         if (requestCode != REQUEST_LOCATION_PERMISSION) return;
-        
+
         boolean granted = false;
         for (int res : grantResults) {
             if (res == PackageManager.PERMISSION_GRANTED) {
@@ -89,50 +114,24 @@ public class LocationHelper {
             }
         }
 
-        if (granted) fetchLocation();
+        if (granted) startUpdates();
         else callback.onPermissionDenied();
     }
 
-    @SuppressLint("MissingPermission")
-    private void fetchLocation() {
-        // 1. Tenter d'abord la position rapide
-        fusedClient.getLastLocation().addOnSuccessListener(activity, location -> {
-            if (location != null) {
-                reverseGeocode(location.getLatitude(), location.getLongitude());
-            }
-            
-            // 2. Demander une position fraîche et précise
-            fusedClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
-                    .addOnSuccessListener(freshLocation -> {
-                        if (freshLocation != null) {
-                            reverseGeocode(freshLocation.getLatitude(), freshLocation.getLongitude());
-                        } else if (location == null) {
-                            callback.onLocationError(activity.getString(R.string.loc_unavailable));
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        if (location == null) callback.onLocationError(e.getMessage());
-                    });
-        });
-    }
-
+    /** Géocodage inverse : transforme (lat, lng) en nom de rue, sur un thread de fond. */
     private void reverseGeocode(double latitude, double longitude) {
-        Geocoder geocoder = new Geocoder(activity, Locale.getDefault());
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            geocoder.getFromLocation(latitude, longitude, 1, addresses -> {
-                String addr = addresses.isEmpty() ? null : addresses.get(0).getAddressLine(0);
-                activity.runOnUiThread(() -> callback.onLocationReady(latitude, longitude, addr));
-            });
-        } else {
-            executor.execute(() -> {
-                String addr = null;
-                try {
-                    List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-                    if (addresses != null && !addresses.isEmpty()) addr = addresses.get(0).getAddressLine(0);
-                } catch (IOException ignored) {}
-                final String finalAddr = addr;
-                activity.runOnUiThread(() -> callback.onLocationReady(latitude, longitude, finalAddr));
-            });
-        }
+        executor.execute(() -> {
+            String addr = null;
+            try {
+                Geocoder geocoder = new Geocoder(activity, Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    addr = addresses.get(0).getAddressLine(0);
+                }
+            } catch (IOException ignored) {
+            }
+            final String finalAddr = addr;
+            activity.runOnUiThread(() -> callback.onLocationReady(latitude, longitude, finalAddr));
+        });
     }
 }

@@ -17,19 +17,6 @@ public class Entry {
         this.remoteId = -1;
     }
 
-    public Entry(long id, String title, String note, String photoPath,
-                 double latitude, double longitude, String address, long timestamp, long remoteId) {
-        this.id = id;
-        this.title = title;
-        this.note = note;
-        this.photoPath = photoPath;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.address = address;
-        this.timestamp = timestamp;
-        this.remoteId = remoteId;
-    }
-
     public long getId() { return id; }
     public void setId(long id) { this.id = id; }
     public String getTitle() { return title; }

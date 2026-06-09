@@ -8,7 +8,9 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "carnet.db";
-    private static final int DATABASE_VERSION = 25; // Augmenté pour forcer onUpgrade
+    // Numéro de version du schéma. À incrémenter si on change la structure de la table :
+    // Android appellera alors onUpgrade() pour recréer la base.
+    private static final int DATABASE_VERSION = 25;
 
     public static final String TABLE_ENTRIES = "entries";
     public static final String COLUMN_ID = "id";
