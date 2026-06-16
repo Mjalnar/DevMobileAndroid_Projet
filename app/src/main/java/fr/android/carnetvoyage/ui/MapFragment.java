@@ -24,7 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
-import fr.android.carnetvoyage.data.LocalRepository;
+import fr.android.carnetvoyage.data.DatabaseManager;
 import fr.android.carnetvoyage.location.LocationHelper;
 import fr.android.carnetvoyage.model.Entry;
 
@@ -35,7 +35,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
     private Marker myPositionMarker;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LocalRepository repository;
+    private DatabaseManager databaseManager;
 
     @Nullable
     @Override
@@ -49,7 +49,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        repository = new LocalRepository(requireContext());
+        databaseManager = new DatabaseManager(requireContext());
 
         // Récupère la carte Google déclarée dans le layout et demande son chargement.
         SupportMapFragment mapFragment =
@@ -74,7 +74,7 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
 
     private void loadEntryMarkers() {
         executor.execute(() -> {
-            List<Entry> entries = repository.getAll();
+            List<Entry> entries = databaseManager.getAllEntries();
 
             Activity activity = getActivity();
             if (activity == null) {

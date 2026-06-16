@@ -5,6 +5,14 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.util.Log;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,62 +20,96 @@ import java.util.concurrent.Executors;
 import fr.android.carnetvoyage.model.Entry;
 
 /**
- * Gère la synchronisation entre la base locale (SQLite) et la base distante (MySQL).
- * Feature "Plus" du projet.
+ * GESTIONNAIRE DE SYNCHRONISATION (Réseau)
+ * S'occupe d'envoyer les données locales vers un serveur distant.
+ * Utile pour expliquer : "Comment l'app communique avec Internet".
  */
 public class SyncManager {
 
-    private static final String TAG = "SyncManager";
-    private final LocalRepository localRepo;
-    private final RemoteRepository remoteRepo;
+    private final DatabaseManager databaseManager;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    
+    // URL de l'API (à adapter)
+    private static final String API_URL = "http://votre-serveur.com/api/add.php";
 
     public SyncManager(Context context) {
-        this.localRepo = new LocalRepository(context);
-        // TODO: Remplacez par l'URL réelle de votre serveur PHP.
-        // Si vous testez avec un émulateur et un serveur local (WAMP/MAMP/XAMPP), 
-        // utilisez "http://10.0.2.2/votre_dossier/api/"
-        this.remoteRepo = new RemoteRepository("http://votre-serveur.com/api/");
+        this.databaseManager = new DatabaseManager(context);
     }
 
     /**
-     * Tente d'envoyer les entrées locales non synchronisées vers le serveur.
+     * Parcourt la base locale et envoie ce qui n'est pas encore sur le serveur.
      */
     public void syncLocalToRemote(SyncCallback callback) {
         executor.execute(() -> {
-            List<Entry> allEntries = localRepo.getAll();
-            int syncCount = 0;
+            List<Entry> entries = databaseManager.getAllEntries();
+            int count = 0;
 
-            for (Entry entry : allEntries) {
-                // Si l'entrée n'a pas encore de remoteId, on tente de l'ajouter au serveur
+            for (Entry entry : entries) {
+                // Si remoteId == -1, l'entrée n'est pas encore synchronisée
                 if (entry.getRemoteId() == -1) {
-                    long remoteId = remoteRepo.add(entry);
+                    long remoteId = sendToServer(entry);
                     if (remoteId != -1) {
-                        entry.setRemoteId(remoteId);
-                        localRepo.update(entry);
-                        syncCount++;
-                        Log.d(TAG, "Synchronisé : " + entry.getTitle() + " (Remote ID: " + remoteId + ")");
+                        databaseManager.updateRemoteId(entry.getId(), remoteId);
+                        count++;
                     }
                 }
             }
-
-            if (callback != null) {
-                int finalSyncCount = syncCount;
-                callback.onSyncFinished(finalSyncCount);
-            }
+            
+            final int finalCount = count;
+            if (callback != null) callback.onSyncFinished(finalCount);
         });
+    }
+
+    /**
+     * Envoi HTTP POST d'un objet JSON vers le serveur.
+     * C'est le coeur de la communication réseau.
+     */
+    private long sendToServer(Entry entry) {
+        try {
+            URL url = new URL(API_URL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setRequestProperty("Content-Type", "application/json");
+
+            // Création du JSON
+            JSONObject json = new JSONObject();
+            json.put("title", entry.getTitle());
+            json.put("note", entry.getNote());
+            json.put("latitude", entry.getLatitude());
+            json.put("longitude", entry.getLongitude());
+            json.put("address", entry.getAddress());
+            json.put("timestamp", entry.getTimestamp());
+
+            // Envoi des données
+            try (OutputStream os = conn.getOutputStream()) {
+                byte[] input = json.toString().getBytes(StandardCharsets.UTF_8);
+                os.write(input, 0, input.length);
+            }
+
+            // Lecture de la réponse (on attend l'ID généré par MySQL)
+            if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                
+                JSONObject res = new JSONObject(sb.toString());
+                return res.getLong("remote_id");
+            }
+        } catch (Exception e) {
+            Log.e("SyncManager", "Erreur synchro : " + e.getMessage());
+        }
+        return -1;
     }
 
     public interface SyncCallback {
         void onSyncFinished(int count);
     }
 
-    /**
-     * Vérifie si le réseau est disponible.
-     */
     public static boolean isNetworkAvailable(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        NetworkInfo net = cm.getActiveNetworkInfo();
+        return net != null && net.isConnected();
     }
 }

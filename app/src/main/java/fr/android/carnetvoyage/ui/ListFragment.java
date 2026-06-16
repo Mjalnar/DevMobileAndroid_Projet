@@ -18,7 +18,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
-import fr.android.carnetvoyage.data.LocalRepository;
+import fr.android.carnetvoyage.data.DatabaseManager;
 import fr.android.carnetvoyage.model.Entry;
 
 public class ListFragment extends Fragment {
@@ -27,7 +27,7 @@ public class ListFragment extends Fragment {
     private TextView emptyView;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private LocalRepository repository;
+    private DatabaseManager databaseManager;
 
     @Nullable
     @Override
@@ -41,7 +41,7 @@ public class ListFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        repository = new LocalRepository(requireContext());
+        databaseManager = new DatabaseManager(requireContext());
         emptyView = view.findViewById(R.id.tv_empty);
 
         RecyclerView recyclerView = view.findViewById(R.id.rv_entries);
@@ -59,7 +59,7 @@ public class ListFragment extends Fragment {
 
     private void loadEntries() {
         executor.execute(() -> {
-            List<Entry> entries = repository.getAll();
+            List<Entry> entries = databaseManager.getAllEntries();
 
             Activity activity = getActivity();
             if (activity == null) {

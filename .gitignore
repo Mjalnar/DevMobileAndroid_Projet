@@ -30,3 +30,6 @@ capture/
 *.log
 # VS Code (config locale, chemins propres à la machine)
 .vscode/
+
+#doc recapitulatif
+DOCUMENTATION_PROJET.md
