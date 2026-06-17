@@ -14,14 +14,14 @@ import fr.android.carnetvoyage.model.Entry;
 /**
  * CLASSE UNIQUE POUR LA BASE DE DONNÉES (SQLite)
  * Elle gère à la fois la création des tables et les opérations CRUD (Create, Read, Update).
- * Plus simple à expliquer : "C'est ici qu'on parle à la mémoire interne du téléphone".
+ * C'est ici qu'on parle à la mémoire interne du téléphone.
  */
 public class DatabaseManager extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "carnet.db";
     private static final int DATABASE_VERSION = 27;
 
-    // Constantes pour les noms de colonnes (évite les fautes de frappe)
+    // Constantes pour les noms de colonnes
     public static final String TABLE_ENTRIES = "entries";
     public static final String COL_ID = "id";
     public static final String COL_TITLE = "title";
@@ -51,7 +51,7 @@ public class DatabaseManager extends SQLiteOpenHelper {
                 COL_TIME + " INTEGER, " +
                 COL_REMOTE + " INTEGER DEFAULT -1);");
 
-        // Ajout d'un lieu de base : La Tour Eiffel (uniquement si la table est vide)
+        // Ajout d'un lieu de base : La Tour Eiffel (si table vide)
         db.execSQL("INSERT INTO " + TABLE_ENTRIES + " (" +
                 COL_TITLE + ", " + COL_NOTE + ", " + COL_LAT + ", " + COL_LNG + ", " + COL_ADDR + ", " + COL_TIME +
                 ") SELECT 'Tour Eiffel', 'Un lieu magnifique à visiter !', 48.8584, 2.2945, 'Champ de Mars, 5 Av. Anatole France, 75007 Paris', " + System.currentTimeMillis() +
@@ -61,8 +61,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {
         // Au lieu de DROP TABLE, on appelle onCreate qui ne fera rien si la table existe déjà.
-        // Si vous ajoutez une colonne plus tard, vous ferez :
-        // if (oldV < 27) { db.execSQL("ALTER TABLE " + TABLE_ENTRIES + " ADD COLUMN nouvelle_colonne TEXT"); }
         onCreate(db);
     }
 

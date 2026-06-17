@@ -31,7 +31,7 @@ import fr.android.carnetvoyage.R;
 
 /**
  * Récupère la position en TEMPS RÉEL via le FusedLocationProviderClient de Google
- * (vu en TP) : on demande des mises à jour régulières (requestLocationUpdates) et,
+ * on demande des mises à jour régulières (requestLocationUpdates) et,
  * à chaque nouvelle position, on fait un géocodage inverse pour obtenir l'adresse.
  */
 public class LocationHelper {
@@ -98,7 +98,7 @@ public class LocationHelper {
                 .addOnFailureListener(e -> callback.onLocationError(e.getMessage()));
     }
 
-    /** À appeler dans onPause du fragment pour arrêter le GPS (économie de batterie). */
+    /** À appeler dans onPause du fragment pour arrêter le GPS. */
     public void stopLocation() {
         fusedClient.removeLocationUpdates(locationCallback);
     }

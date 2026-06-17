@@ -22,7 +22,7 @@ import fr.android.carnetvoyage.model.Entry;
 /**
  * GESTIONNAIRE DE SYNCHRONISATION (Réseau)
  * S'occupe d'envoyer les données locales vers un serveur distant.
- * Utile pour expliquer : "Comment l'app communique avec Internet".
+ * Comment l'app communique avec Internet.
  */
 public class SyncManager {
 
@@ -60,10 +60,7 @@ public class SyncManager {
         });
     }
 
-    /**
-     * Envoi HTTP POST d'un objet JSON vers le serveur.
-     * C'est le coeur de la communication réseau.
-     */
+    /** Envoi HTTP POST d'un objet JSON vers le serveur. */
     private long sendToServer(Entry entry) {
         try {
             URL url = new URL(API_URL);
