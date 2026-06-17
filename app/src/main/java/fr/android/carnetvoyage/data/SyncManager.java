@@ -29,8 +29,9 @@ public class SyncManager {
     private final DatabaseManager databaseManager;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     
-    // URL de l'API (à adapter)
-    private static final String API_URL = "http://votre-serveur.com/api/add.php";
+    // URL de l'API.
+    // 10.0.2.2 = adresse spéciale qui, depuis l'ÉMULATEUR Android, pointe vers le PC (localhost).
+    private static final String API_URL = "http://10.0.2.2:8000";
 
     public SyncManager(Context context) {
         this.databaseManager = new DatabaseManager(context);

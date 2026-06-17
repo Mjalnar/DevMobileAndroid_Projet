@@ -33,3 +33,9 @@ capture/
 
 #doc recapitulatif
 DOCUMENTATION_PROJET.md
+
+# Python (serveur de demonstration)
+__pycache__/
+*.py[cod]
+# Base SQLite generee par le serveur de demo
+local_server/carnet.db
