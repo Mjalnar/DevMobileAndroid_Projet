@@ -29,11 +29,6 @@ import java.util.concurrent.Executors;
 
 import fr.android.carnetvoyage.R;
 
-/**
- * Récupère la position en TEMPS RÉEL via le FusedLocationProviderClient de Google
- * on demande des mises à jour régulières (requestLocationUpdates) et,
- * à chaque nouvelle position, on fait un géocodage inverse pour obtenir l'adresse.
- */
 public class LocationHelper {
 
     public static final int REQUEST_LOCATION_PERMISSION = 1001;
@@ -58,10 +53,8 @@ public class LocationHelper {
         this.callback = callback;
         this.fusedClient = LocationServices.getFusedLocationProviderClient(activity);
 
-        // Une position toutes les 5 secondes, en haute précision (GPS).
         this.locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000).build();
 
-        // Appelé automatiquement par Google à chaque nouvelle position.
         this.locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(@NonNull LocationResult result) {
@@ -78,7 +71,6 @@ public class LocationHelper {
                 == PackageManager.PERMISSION_GRANTED;
     }
 
-    /** Demande la permission si besoin, puis lance les mises à jour de position. */
     public void requestLocation() {
         if (hasPermission(activity)) {
             startUpdates();
@@ -98,7 +90,6 @@ public class LocationHelper {
                 .addOnFailureListener(e -> callback.onLocationError(e.getMessage()));
     }
 
-    /** À appeler dans onPause du fragment pour arrêter le GPS. */
     public void stopLocation() {
         fusedClient.removeLocationUpdates(locationCallback);
     }
@@ -118,7 +109,6 @@ public class LocationHelper {
         else callback.onPermissionDenied();
     }
 
-    /** Géocodage inverse : transforme (lat, lng) en nom de rue, sur un thread de fond. */
     private void reverseGeocode(double latitude, double longitude) {
         executor.execute(() -> {
             String addr = null;

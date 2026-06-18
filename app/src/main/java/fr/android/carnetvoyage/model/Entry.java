@@ -8,9 +8,9 @@ public class Entry {
     private String photoPath;
     private double latitude;
     private double longitude;
-    private String address;   // rue obtenue par géocodage inverse
-    private long timestamp;    // date de création (en millisecondes)
-    private long remoteId;    // ID sur le serveur MySQL (-1 si pas synchro)
+    private String address;
+    private long timestamp;
+    private long remoteId;
 
     public Entry() {
         this.id = -1;

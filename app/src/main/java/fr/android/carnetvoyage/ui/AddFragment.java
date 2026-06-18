@@ -53,7 +53,6 @@ public class AddFragment extends Fragment implements LocationHelper.Callback {
     private LocationHelper locationHelper;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    // Launcher pour la caméra
     private final ActivityResultLauncher<Intent> cameraLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -64,7 +63,6 @@ public class AddFragment extends Fragment implements LocationHelper.Callback {
             }
     );
 
-    // Launcher pour la permission Caméra
     private final ActivityResultLauncher<String> cameraPermissionLauncher = registerForActivityResult(
             new ActivityResultContracts.RequestPermission(),
             isGranted -> {
@@ -193,7 +191,6 @@ public class AddFragment extends Fragment implements LocationHelper.Callback {
             requireActivity().runOnUiThread(() -> {
                 if (id != -1) {
                     Toast.makeText(requireContext(), R.string.success_saving, Toast.LENGTH_SHORT).show();
-                    // Retourner à la liste après sauvegarde
                     getParentFragmentManager().beginTransaction()
                             .replace(R.id.fragment_container, new ListFragment())
                             .commit();

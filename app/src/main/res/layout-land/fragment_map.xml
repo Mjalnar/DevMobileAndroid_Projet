@@ -1,9 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Variante PAYSAGE de l'écran Carte. Mêmes IDs que layout/fragment_map.xml,
-     donc MapFragment fonctionne sans aucune modification : Android choisit ce
-     fichier tout seul quand le téléphone est en paysage.
-     Ici on déplace le bouton en bas à gauche, plus accessible au pouce
-     quand l'écran est large. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">

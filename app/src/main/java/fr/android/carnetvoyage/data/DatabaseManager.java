@@ -7,21 +7,17 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import fr.android.carnetvoyage.model.Entry;
 
-/**
- * CLASSE UNIQUE POUR LA BASE DE DONNÉES (SQLite)
- * Elle gère à la fois la création des tables et les opérations CRUD (Create, Read, Update).
- * C'est ici qu'on parle à la mémoire interne du téléphone.
- */
 public class DatabaseManager extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "carnet.db";
     private static final int DATABASE_VERSION = 27;
 
-    // Constantes pour les noms de colonnes
     public static final String TABLE_ENTRIES = "entries";
     public static final String COL_ID = "id";
     public static final String COL_TITLE = "title";
@@ -39,7 +35,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Création de la table avec SQL (IF NOT EXISTS pour ne pas écraser)
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_ENTRIES + " (" +
                 COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COL_TITLE + " TEXT, " +
@@ -51,7 +46,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
                 COL_TIME + " INTEGER, " +
                 COL_REMOTE + " INTEGER DEFAULT -1);");
 
-        // Ajout d'un lieu de base : La Tour Eiffel (si table vide)
         db.execSQL("INSERT INTO " + TABLE_ENTRIES + " (" +
                 COL_TITLE + ", " + COL_NOTE + ", " + COL_LAT + ", " + COL_LNG + ", " + COL_ADDR + ", " + COL_TIME +
                 ") SELECT 'Tour Eiffel', 'Un lieu magnifique à visiter !', 48.8584, 2.2945, 'Champ de Mars, 5 Av. Anatole France, 75007 Paris', " + System.currentTimeMillis() +
@@ -60,7 +54,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {
-        // Au lieu de DROP TABLE, on appelle onCreate qui ne fera rien si la table existe déjà.
         onCreate(db);
     }
 
@@ -69,9 +62,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
         onUpgrade(db, oldVersion, newVersion);
     }
 
-    // --- OPÉRATIONS CRUD ---
-
-    /** AJOUT : Enregistre un voyage en base */
     public long addEntry(Entry entry) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
@@ -86,7 +76,6 @@ public class DatabaseManager extends SQLiteOpenHelper {
         return db.insert(TABLE_ENTRIES, null, v);
     }
 
-    /** LECTURE : Récupère tous les voyages du plus récent au plus ancien */
     public List<Entry> getAllEntries() {
         List<Entry> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
@@ -94,28 +83,62 @@ public class DatabaseManager extends SQLiteOpenHelper {
 
         if (c.moveToFirst()) {
             do {
-                Entry e = new Entry();
-                e.setId(c.getLong(c.getColumnIndexOrThrow(COL_ID)));
-                e.setTitle(c.getString(c.getColumnIndexOrThrow(COL_TITLE)));
-                e.setNote(c.getString(c.getColumnIndexOrThrow(COL_NOTE)));
-                e.setPhotoPath(c.getString(c.getColumnIndexOrThrow(COL_PHOTO)));
-                e.setLatitude(c.getDouble(c.getColumnIndexOrThrow(COL_LAT)));
-                e.setLongitude(c.getDouble(c.getColumnIndexOrThrow(COL_LNG)));
-                e.setAddress(c.getString(c.getColumnIndexOrThrow(COL_ADDR)));
-                e.setTimestamp(c.getLong(c.getColumnIndexOrThrow(COL_TIME)));
-                e.setRemoteId(c.getLong(c.getColumnIndexOrThrow(COL_REMOTE)));
-                list.add(e);
+                list.add(cursorToEntry(c));
             } while (c.moveToNext());
         }
         c.close();
         return list;
     }
 
-    /** MISE À JOUR : Utilisé principalement pour marquer un item comme "synchronisé" */
+    public Entry getById(long id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(TABLE_ENTRIES, null, COL_ID + "=?",
+                new String[]{String.valueOf(id)}, null, null, null);
+
+        Entry entry = null;
+        if (c.moveToFirst()) {
+            entry = cursorToEntry(c);
+        }
+        c.close();
+        return entry;
+    }
+
+    public Set<Long> getKnownRemoteIds() {
+        Set<Long> ids = new HashSet<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor c = db.query(TABLE_ENTRIES, new String[]{COL_REMOTE}, null, null, null, null, null);
+        if (c.moveToFirst()) {
+            do {
+                ids.add(c.getLong(0));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return ids;
+    }
+
+    public void deleteEntry(long id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_ENTRIES, COL_ID + "=?", new String[]{String.valueOf(id)});
+    }
+
     public void updateRemoteId(long localId, long remoteId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues v = new ContentValues();
         v.put(COL_REMOTE, remoteId);
         db.update(TABLE_ENTRIES, v, COL_ID + "=?", new String[]{String.valueOf(localId)});
+    }
+
+    private Entry cursorToEntry(Cursor c) {
+        Entry e = new Entry();
+        e.setId(c.getLong(c.getColumnIndexOrThrow(COL_ID)));
+        e.setTitle(c.getString(c.getColumnIndexOrThrow(COL_TITLE)));
+        e.setNote(c.getString(c.getColumnIndexOrThrow(COL_NOTE)));
+        e.setPhotoPath(c.getString(c.getColumnIndexOrThrow(COL_PHOTO)));
+        e.setLatitude(c.getDouble(c.getColumnIndexOrThrow(COL_LAT)));
+        e.setLongitude(c.getDouble(c.getColumnIndexOrThrow(COL_LNG)));
+        e.setAddress(c.getString(c.getColumnIndexOrThrow(COL_ADDR)));
+        e.setTimestamp(c.getLong(c.getColumnIndexOrThrow(COL_TIME)));
+        e.setRemoteId(c.getLong(c.getColumnIndexOrThrow(COL_REMOTE)));
+        return e;
     }
 }

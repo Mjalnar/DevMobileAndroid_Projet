@@ -1,30 +1,13 @@
-"""
-SERVEUR DE DEMONSTRATION (Python, sans rien a installer)
-=========================================================
-Reproduit le role de api_php/add.php, mais en Python pur :
-  - il recoit les lieux envoyes par l'application Android (HTTP POST + JSON),
-  - il les enregistre dans une base SQLite locale (fichier carnet.db),
-  - il renvoie l'identifiant genere (remote_id), comme le faisait MySQL.
-
-Aucune dependance externe : http.server et sqlite3 font partie de Python.
-
-LANCEMENT :
-    python server.py
-Puis laisser la fenetre ouverte pendant la demo.
-"""
-
 import json
 import sqlite3
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-# --- Configuration ---
-HOST = "0.0.0.0"   # 0.0.0.0 = ecoute sur toutes les interfaces (emulateur ET telephone WiFi)
+HOST = "0.0.0.0"
 PORT = 8000
 DB_FILE = "carnet.db"
 
 
 def get_db():
-    """Ouvre la base SQLite et cree la table si elle n'existe pas encore."""
     conn = sqlite3.connect(DB_FILE)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS entries (
@@ -44,7 +27,6 @@ def get_db():
 class Handler(BaseHTTPRequestHandler):
 
     def _send_json(self, code, payload):
-        """Petit utilitaire pour repondre du JSON."""
         body = json.dumps(payload).encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
@@ -53,7 +35,6 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_POST(self):
-        """Reception d'un nouveau lieu envoye par l'application (= sync)."""
         length = int(self.headers.get("Content-Length", 0))
         raw = self.rfile.read(length)
         try:
@@ -79,17 +60,15 @@ class Handler(BaseHTTPRequestHandler):
         remote_id = cur.lastrowid
         conn.close()
 
-        # Trace visible dans la console -> pratique pour montrer la sync en direct
         print(f"  [SYNC] Recu : '{data.get('title')}'  ->  remote_id = {remote_id}")
 
-        # Meme reponse que add.php : {"remote_id": N}
         self._send_json(200, {"remote_id": remote_id})
 
     def do_GET(self):
-        """
-        Page de controle : ouvrir http://localhost:8000 dans un navigateur
-        pour verifier en direct ce que le serveur a recu.
-        """
+        if self.path.startswith("/list"):
+            self._send_list_json()
+            return
+
         conn = get_db()
         rows = conn.execute(
             "SELECT id, title, address, timestamp FROM entries ORDER BY id DESC"
@@ -110,8 +89,29 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _send_list_json(self):
+        conn = get_db()
+        rows = conn.execute(
+            "SELECT id, title, note, latitude, longitude, address, timestamp "
+            "FROM entries ORDER BY id DESC"
+        ).fetchall()
+        conn.close()
+
+        entries = [
+            {
+                "remote_id": r[0],
+                "title": r[1],
+                "note": r[2],
+                "latitude": r[3],
+                "longitude": r[4],
+                "address": r[5],
+                "timestamp": r[6],
+            }
+            for r in rows
+        ]
+        self._send_json(200, entries)
+
     def log_message(self, *args):
-        """On desactive les logs HTTP bruts (on garde juste nos prints [SYNC])."""
         pass
 
 

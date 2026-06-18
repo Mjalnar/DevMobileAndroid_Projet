@@ -20,20 +20,22 @@ import java.util.Locale;
 import fr.android.carnetvoyage.R;
 import fr.android.carnetvoyage.model.Entry;
 
-/**
- * Fait le lien entre la liste d'Entry et le RecyclerView.
- * Le RecyclerView ne crée qu'une poignée de "lignes" (ViewHolder) et les
- * recycle au défilement -> c'est ça qui le rend fluide même avec beaucoup d'items.
- */
 public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHolder> {
 
-    private final List<Entry> entries = new ArrayList<>();
+    public interface OnEntryClickListener {
+        void onEntryClick(Entry entry);
+    }
 
-    // Format de date dépendant de la langue du téléphone (i18n gratuite).
+    private final List<Entry> entries = new ArrayList<>();
+    private final OnEntryClickListener clickListener;
+
     private final DateFormat dateFormat =
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, Locale.getDefault());
 
-    /** Remplace les données affichées et redessine la liste. */
+    public EntryAdapter(OnEntryClickListener clickListener) {
+        this.clickListener = clickListener;
+    }
+
     public void setData(List<Entry> newEntries) {
         entries.clear();
         if (newEntries != null) {
@@ -42,7 +44,10 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
         notifyDataSetChanged();
     }
 
-    // Appelé quand le RecyclerView a besoin d'une NOUVELLE ligne vide.
+    public Entry getEntryAt(int position) {
+        return entries.get(position);
+    }
+
     @NonNull
     @Override
     public EntryViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -51,7 +56,6 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
         return new EntryViewHolder(view);
     }
 
-    // Appelé pour REMPLIR une ligne (neuve ou recyclée) avec l'entrée n° position.
     @Override
     public void onBindViewHolder(@NonNull EntryViewHolder holder, int position) {
         Entry entry = entries.get(position);
@@ -63,6 +67,13 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
                 : holder.itemView.getContext().getString(R.string.loc_address_unknown));
 
         holder.date.setText(dateFormat.format(new Date(entry.getTimestamp())));
+
+        boolean synced = entry.getRemoteId() != -1;
+        holder.sync.setText(synced ? R.string.sync_state_done : R.string.sync_state_pending);
+
+        holder.itemView.setOnClickListener(v -> {
+            if (clickListener != null) clickListener.onEntryClick(entry);
+        });
 
         if (entry.getPhotoPath() != null) {
             File photoFile = new File(entry.getPhotoPath());
@@ -81,12 +92,12 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
         return entries.size();
     }
 
-    /** Garde les références des vues d'une ligne pour éviter de re-chercher à chaque bind. */
     static class EntryViewHolder extends RecyclerView.ViewHolder {
         final ImageView photo;
         final TextView title;
         final TextView address;
         final TextView date;
+        final TextView sync;
 
         EntryViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -94,6 +105,7 @@ public class EntryAdapter extends RecyclerView.Adapter<EntryAdapter.EntryViewHol
             title = itemView.findViewById(R.id.tv_title);
             address = itemView.findViewById(R.id.tv_address);
             date = itemView.findViewById(R.id.tv_date);
+            sync = itemView.findViewById(R.id.tv_sync);
         }
     }
 }

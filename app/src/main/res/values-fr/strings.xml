@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Textes français. Chargés automatiquement quand le téléphone est en français. -->
 <resources>
     <string name="app_name">Carnet</string>
 
-    <!-- Menu / tiroir -->
     <string name="drawer_open">Ouvrir le menu</string>
     <string name="drawer_close">Fermer le menu</string>
     <string name="menu_list">Liste</string>
@@ -11,7 +9,6 @@
     <string name="menu_add">Ajouter une entrée</string>
     <string name="menu_sync">Synchroniser</string>
 
-    <!-- Écran d'ajout -->
     <string name="hint_title">Titre</string>
     <string name="hint_note">Note</string>
     <string name="btn_take_photo">Prendre une photo</string>
@@ -21,18 +18,45 @@
     <string name="success_saving">Entrée enregistrée avec succès</string>
     <string name="location_format">Lat: %.4f, Long: %.4f</string>
 
-    <!-- Liste -->
     <string name="list_empty">Aucun lieu pour le moment. Ajoutez le premier !</string>
     <string name="list_photo_desc">Photo du lieu</string>
 
-    <!-- Localisation -->
     <string name="loc_my_position">Ma position</string>
     <string name="loc_permission_denied">Permission de localisation refusée</string>
     <string name="loc_address_unknown">Adresse introuvable</string>
     <string name="loc_error">Erreur de localisation</string>
 
-    <!-- Synchronisation -->
     <string name="sync_started">Synchronisation démarrée...</string>
     <string name="sync_finished">%d éléments synchronisés</string>
     <string name="no_network">Pas de connexion internet</string>
+    <string name="sync_state_done">✓ Synchronisé</string>
+    <string name="sync_state_pending">⏳ À synchroniser</string>
+
+    <string name="action_search">Rechercher</string>
+    <string name="search_hint">Rechercher un lieu…</string>
+    <string name="action_sort">Trier par</string>
+    <string name="sort_date_desc">Plus récent d\'abord</string>
+    <string name="sort_date_asc">Plus ancien d\'abord</string>
+    <string name="sort_title">Titre (A-Z)</string>
+
+    <string name="detail_open_map">Ouvrir dans la carte</string>
+    <string name="detail_share">Partager</string>
+    <string name="detail_delete">Supprimer</string>
+    <string name="detail_no_map_app">Aucune application de carte disponible</string>
+    <string name="delete_confirm">Supprimer « %s » ?</string>
+    <string name="delete_done">« %s » supprimé</string>
+    <string name="undo">Annuler</string>
+    <string name="share_text">📍 %1$s\n%2$s\nhttps://maps.google.com/?q=%3$f,%4$f</string>
+
+    <string name="menu_settings">Réglages</string>
+    <string name="settings_server_url">URL du serveur de synchro</string>
+    <string name="settings_theme">Thème</string>
+    <string name="theme_system">Système</string>
+    <string name="theme_light">Clair</string>
+    <string name="theme_dark">Sombre</string>
+    <string name="settings_language">Langue</string>
+    <string name="lang_system">Système</string>
+    <string name="lang_french">Français</string>
+    <string name="lang_english">English</string>
+    <string name="settings_saved">Réglages enregistrés</string>
 </resources>

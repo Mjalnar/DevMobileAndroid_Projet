@@ -19,10 +19,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import fr.android.carnetvoyage.MainActivity;
 import fr.android.carnetvoyage.R;
 import fr.android.carnetvoyage.data.DatabaseManager;
 import fr.android.carnetvoyage.location.LocationHelper;
@@ -36,6 +39,8 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private DatabaseManager databaseManager;
+
+    private final Map<Marker, Entry> markerEntries = new HashMap<>();
 
     @Nullable
     @Override
@@ -51,7 +56,6 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
 
         databaseManager = new DatabaseManager(requireContext());
 
-        // Récupère la carte Google déclarée dans le layout et demande son chargement.
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getChildFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -63,12 +67,19 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
                 .setOnClickListener(v -> locationHelper.requestLocation());
     }
 
-    // Appelé par Google quand la carte est prête à être utilisée.
     @Override
     public void onMapReady(@NonNull GoogleMap map) {
         this.googleMap = map;
-        // Vue d'ensemble de la France au démarrage.
         map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(46.6, 2.5), 5f));
+
+        map.setOnInfoWindowClickListener(marker -> {
+            Entry entry = markerEntries.get(marker);
+            if (entry != null) {
+                ((MainActivity) requireActivity())
+                        .showFragment(DetailFragment.newInstance(entry.getId()), entry.getTitle());
+            }
+        });
+
         loadEntryMarkers();
     }
 
@@ -85,10 +96,13 @@ public class MapFragment extends Fragment implements OnMapReadyCallback, Locatio
                     return;
                 }
                 for (Entry entry : entries) {
-                    googleMap.addMarker(new MarkerOptions()
+                    Marker marker = googleMap.addMarker(new MarkerOptions()
                             .position(new LatLng(entry.getLatitude(), entry.getLongitude()))
                             .title(entry.getTitle())
                             .snippet(entry.getAddress()));
+                    if (marker != null) {
+                        markerEntries.put(marker, entry);
+                    }
                 }
             });
         });
